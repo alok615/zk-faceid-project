@@ -8,12 +8,22 @@ pragma solidity ^0.8.19;
 interface IFaceModule {
     /**
      * @notice Attests a face using zero-knowledge proof
-     * @param proof The ZK proof data
-     * @param nullifierHash Hash to prevent double attestation
-     * @param userAddress Address of the user being attested
+     * @param _pA First part of the Groth16 proof (2 elements)
+     * @param _pB Second part of the Groth16 proof (2x2 elements)
+     * @param _pC Third part of the Groth16 proof (2 elements)
+     * @param _publicSignals Array of public inputs from the ZK circuit (4 elements)
+     * @param nullifierHash Unique hash to prevent double attestation
+     * @param userAddress Address to associate with the face attestation
      * @return bool True if attestation is successful
      */
-    function attestFace(bytes calldata proof, bytes32 nullifierHash, address userAddress) external returns (bool);
+    function attestFace(
+        uint256[2] memory _pA,
+        uint256[2][2] memory _pB,
+        uint256[2] memory _pC,
+        uint256[4] memory _publicSignals,
+        bytes32 nullifierHash,
+        address userAddress
+    ) external returns (bool);
     
     /**
      * @notice Checks if a user has a valid face attestation

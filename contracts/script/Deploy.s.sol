@@ -4,6 +4,7 @@ pragma solidity ^0.8.19;
 import "forge-std/Script.sol";
 import "../src/Vault.sol";
 import "../src/FaceModule.sol";
+import "../src/Verifier.sol";
 
 /**
  * @title Deploy
@@ -22,8 +23,11 @@ contract Deploy is Script {
         // Start broadcasting transactions with the deployer's key
         vm.startBroadcast(deployerPrivateKey);
 
-        // Deploy FaceModule contract
-        FaceModule faceModule = new FaceModule();
+        // Deploy the verifier first
+        Groth16Verifier verifier = new Groth16Verifier();
+
+        // Deploy FaceModule contract with verifier address
+        FaceModule faceModule = new FaceModule(address(verifier));
         faceModuleAddr = address(faceModule);
 
         // Deploy Vault contract, passing the FaceModule address to the constructor
