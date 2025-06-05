@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict
 import time
@@ -10,6 +11,15 @@ app = FastAPI(
     title="Underwriting Agent", 
     version="1.0.0",
     description="AI-powered underwriting and risk assessment agent for financial applications"
+)
+
+# Add CORS middleware for React frontend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Enums for better type safety
@@ -53,6 +63,13 @@ class RiskAssessmentRequest(BaseModel):
     zk_face_proof: Optional[Dict] = Field(None, description="ZK face identity proof from zk-FaceID agent")
     additional_factors: Optional[Dict] = Field(None, description="Additional risk factors")
 
+# Enhanced request model for React frontend
+class SimpleRiskRequest(BaseModel):
+    user_id: str
+    wallet_address: str
+    consented_data: Dict
+    timestamp: str
+
 # Response models
 class RiskScore(BaseModel):
     overall_score: float = Field(ge=0, le=1, description="Overall risk score (0=low risk, 1=high risk)")
@@ -74,6 +91,14 @@ class UnderwritingResponse(BaseModel):
     timestamp: float
     applicant_id: str
 
+# Simplified response model for React frontend
+class SimpleRiskResponse(BaseModel):
+    overall_score: int = Field(ge=0, le=100, description="Overall risk score out of 100")
+    risk_level: str
+    factors: Dict[str, int]
+    recommendation: str
+    timestamp: str
+
 class HealthResponse(BaseModel):
     status: str
     service: str
@@ -90,10 +115,77 @@ async def health_check():
         models_loaded=True
     )
 
-@app.post("/score_risk", response_model=UnderwritingResponse)
-async def score_risk(request: RiskAssessmentRequest):
+@app.post("/score_risk", response_model=SimpleRiskResponse)
+async def score_risk(request: SimpleRiskRequest):
     """
-    Perform comprehensive risk assessment and underwriting decision
+    Simplified risk scoring endpoint for React frontend
+    
+    - **user_id**: User identifier (wallet address)
+    - **wallet_address**: Connected wallet address
+    - **consented_data**: User financial data from frontend form
+    - **timestamp**: Request timestamp
+    
+    Returns simplified risk assessment for frontend display
+    """
+    
+    try:
+        # Extract data from consented_data
+        data = request.consented_data
+        age = data.get("age", 25)
+        income = data.get("annual_income", 50000)
+        credit_score = data.get("credit_score", 650)
+        employment_years = data.get("employment_years", 2)
+        existing_debt = data.get("existing_debt", 0)
+        requested_loan = data.get("requested_loan", 50000)
+        
+        # Calculate individual risk factors (0-100 scale)
+        credit_factor = calculate_credit_factor(credit_score)
+        income_factor = calculate_income_factor(income, employment_years)
+        debt_factor = calculate_debt_factor(existing_debt, income)
+        employment_factor = calculate_employment_factor(employment_years)
+        
+        # Calculate overall score (weighted average)
+        overall_score = int(
+            credit_factor * 0.4 +
+            income_factor * 0.3 +
+            debt_factor * 0.2 +
+            employment_factor * 0.1
+        )
+        
+        # Determine risk level
+        if overall_score >= 80:
+            risk_level = "low"
+            recommendation = "Excellent candidate for loan approval with standard terms."
+        elif overall_score >= 60:
+            risk_level = "medium"
+            recommendation = "Good candidate with some conditions. Consider income verification."
+        elif overall_score >= 40:
+            risk_level = "high"
+            recommendation = "High risk candidate. Requires additional documentation and review."
+        else:
+            risk_level = "very_high"
+            recommendation = "Very high risk. Consider declining or requiring co-signer."
+        
+        return SimpleRiskResponse(
+            overall_score=overall_score,
+            risk_level=risk_level,
+            factors={
+                "credit_score": credit_factor,
+                "income_stability": income_factor,
+                "debt_ratio": 100 - debt_factor,  # Invert for display
+                "employment_history": employment_factor
+            },
+            recommendation=recommendation,
+            timestamp=time.strftime("%Y-%m-%d %H:%M:%S")
+        )
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Risk assessment error: {str(e)}")
+
+@app.post("/underwrite", response_model=UnderwritingResponse)
+async def underwrite(request: RiskAssessmentRequest):
+    """
+    Comprehensive underwriting endpoint (legacy/advanced)
     
     - **applicant_data**: Complete applicant financial profile
     - **zk_face_proof**: Optional ZK proof for identity verification
@@ -166,6 +258,52 @@ async def score_risk(request: RiskAssessmentRequest):
         applicant_id=f"applicant_{hash(str(applicant.dict())) % 10000}"
     )
 
+# Helper functions for simplified scoring (0-100 scale)
+def calculate_credit_factor(credit_score: int) -> int:
+    """Calculate credit factor (higher score = better)"""
+    if credit_score >= 750:
+        return 90
+    elif credit_score >= 700:
+        return 75
+    elif credit_score >= 650:
+        return 60
+    elif credit_score >= 600:
+        return 45
+    else:
+        return 25
+
+def calculate_income_factor(income: float, employment_years: float) -> int:
+    """Calculate income stability factor"""
+    income_score = min(100, int((income / 100000) * 70)) if income > 0 else 20
+    employment_score = min(30, int(employment_years * 6))
+    return income_score + employment_score
+
+def calculate_debt_factor(debt: float, income: float) -> int:
+    """Calculate debt burden factor (higher debt = lower score)"""
+    if income <= 0:
+        return 90  # High risk if no income
+    debt_ratio = debt / income
+    if debt_ratio <= 0.3:
+        return 20  # Low debt burden
+    elif debt_ratio <= 0.5:
+        return 50
+    elif debt_ratio <= 0.7:
+        return 70
+    else:
+        return 90  # High debt burden
+
+def calculate_employment_factor(employment_years: float) -> int:
+    """Calculate employment stability factor"""
+    if employment_years >= 5:
+        return 90
+    elif employment_years >= 2:
+        return 70
+    elif employment_years >= 1:
+        return 50
+    else:
+        return 30
+
+# Legacy helper functions for comprehensive scoring
 def calculate_credit_risk(credit_score: int) -> float:
     """Calculate credit risk based on credit score"""
     if credit_score >= 750:
@@ -263,14 +401,17 @@ def generate_explanation(decision: UnderwritingDecision, risk_scores: RiskScore,
 async def root():
     """Root endpoint with API information"""
     return {
-        "service": "Underwriting Agent",
-        "version": "1.0.0",
-        "description": "AI-powered risk assessment and underwriting decisions",
+        "service": "Underwriting Agent Enhanced",
+        "version": "1.0.1",
+        "description": "AI-powered risk assessment and underwriting decisions with React frontend support",
         "endpoints": {
             "health": "/health",
-            "score_risk": "/score_risk",
+            "score_risk": "/score_risk (React frontend)",
+            "underwrite": "/underwrite (comprehensive)",
             "docs": "/docs"
         },
+        "frontend_integration": "http://localhost:3000",
+        "cors_enabled": True,
         "risk_levels": [level.value for level in RiskLevel],
         "decisions": [decision.value for decision in UnderwritingDecision]
     }
