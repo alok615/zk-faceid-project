@@ -114,7 +114,7 @@ const LandingPage = () => {
               animate={{ scale: 1, rotateX: 0 }}
               transition={{ duration: 1, delay: 0.5 }}
             >
-              ZK Face ID
+              Sashakt
             </motion.h1>
             
             <motion.div
@@ -124,7 +124,7 @@ const LandingPage = () => {
               className="flex items-center justify-center gap-4 mb-6"
             >
               <div className="h-px bg-gradient-to-r from-transparent via-purple-400 to-transparent w-24"></div>
-              <span className="text-2xl md:text-3xl text-gray-300 font-light">Zero-Knowledge Identity</span>
+              <span className="text-2xl md:text-3xl text-gray-300 font-light">Advanced Identity Verification</span>
               <div className="h-px bg-gradient-to-r from-transparent via-cyan-400 to-transparent w-24"></div>
             </motion.div>
 
@@ -514,7 +514,7 @@ const FooterSection = () => {
             Ready to revolutionize identity verification?
           </h3>
           <p className="text-gray-400 max-w-2xl mx-auto">
-            Join the future of secure, privacy-preserving digital identity with zk-FaceID
+            Join the future of secure, privacy-preserving digital identity with Sashakt
           </p>
         </motion.div>
         
@@ -524,7 +524,7 @@ const FooterSection = () => {
           transition={{ duration: 0.8, delay: 0.3 }}
           className="text-gray-500 text-sm"
         >
-          <p>© 2024 zk-FaceID. Built for International Hackathon. Privacy-first identity verification.</p>
+          <p>© 2024 Sashakt. Built for International Hackathon. Privacy-first identity verification.</p>
         </motion.div>
       </div>
     </footer>

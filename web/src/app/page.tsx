@@ -29,7 +29,7 @@ function LoadingScreen() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
         >
-          ZK Face ID
+          Sashakt
         </motion.h1>
         
         <motion.p
@@ -38,7 +38,7 @@ function LoadingScreen() {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.8, delay: 0.3 }}
         >
-          Loading revolutionary identity platform...
+          Loading advanced identity platform...
         </motion.p>
       </div>
     </div>

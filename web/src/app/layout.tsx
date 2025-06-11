@@ -6,8 +6,8 @@ import { Web3ModalProvider } from '@/components/web3modal-provider'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'ZK Face ID Project',
-  description: 'Face verification with zero-knowledge proofs',
+  title: 'Sashakt - Advanced Identity Verification',
+  description: 'Secure face verification with zero-knowledge proofs and privacy-first technology',
 }
 
 export default function RootLayout({
